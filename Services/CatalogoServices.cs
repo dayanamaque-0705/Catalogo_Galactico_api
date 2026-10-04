@@ -10,7 +10,7 @@ namespace Services
         // GET /personajes/{id}/eventos: devuelve los eventos relacionados con un personaje.
         public List<Evento> ObtenerEventosPorPersonaje(int personajeId)
         {
-            return CatalogoContext.Eventos
+            return Catalogo.Eventos
                 .Where(e => e.Participantes.Contains(personajeId))
                 .ToList();
         }
@@ -18,7 +18,7 @@ namespace Services
         // GET /personajes/ranking?por=poder: ordena personajes según el poder de su carta[cite: 2].
         public List<CardPersonaje> ObtenerRankingPorPoder()
         {
-            return CatalogoContext.Cartas
+            return Catalogo.Cartas
                 .OrderByDescending(c => c.Poder)
                 .ToList();
         }
@@ -26,37 +26,37 @@ namespace Services
         // GET /eventos/{id}/mvp: devuelve el participante con mayor poder dentro del evento[cite: 2].
         public Personaje? ObtenerMvpDeEvento(int eventoId)
         {
-            var evento = CatalogoContext.Eventos.FirstOrDefault(e => e.Id == eventoId);
+            var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == eventoId);
             // Si el evento no existe o no tiene participantes, retornamos nulo
             if (evento == null || !evento.Participantes.Any()) return null;
 
             // Buscamos las cartas de los participantes y elegimos la de mayor poder
-            var cartaMvp = CatalogoContext.Cartas
+            var cartaMvp = Catalogo.Cartas
                 .Where(c => evento.Participantes.Contains(c.PersonajeId))
                 .OrderByDescending(c => c.Poder)
                 .FirstOrDefault();
 
             if (cartaMvp == null) return null;
 
-            return CatalogoContext.Personajes.FirstOrDefault(p => p.Id == cartaMvp.PersonajeId);
+            return Catalogo.Personajes.FirstOrDefault(p => p.Id == cartaMvp.PersonajeId);
         }
 
         // Regla de negocio: Actualización automática de estado a muerto[cite: 2, 3]
         public void RegistrarMuertePersonaje(int personajeId)
         {
-            var index = CatalogoContext.Personajes.FindIndex(p => p.Id == personajeId);
+            var index = Catalogo.Personajes.FindIndex(p => p.Id == personajeId);
             if (index != -1)
             {
-                var personajeOriginal = CatalogoContext.Personajes[index];
+                var personajeOriginal = Catalogo.Personajes[index];
                 
                 // Como usamos 'record', creamos una copia inmutable con el campo cambiado y sustituimos en la lista[cite: 2, 3].
-                CatalogoContext.Personajes[index] = personajeOriginal with { Estado = Estado.Muerto };
+                Catalogo.Personajes[index] = personajeOriginal with { Estado = Estado.Muerto };
             }
         }
         // POST /eventos/{id}/simular: Simulación de batalla
         public ResultadoSimulacion SimularBatalla(int eventoId)
         {
-            var evento = CatalogoContext.Eventos.FirstOrDefault(e => e.Id == eventoId);
+            var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == eventoId);
             
             // Validación: Error claro si no hay suficientes participantes[cite: 2]
             if (evento == null || evento.Participantes.Count < 2)
@@ -64,11 +64,11 @@ namespace Services
                 return new ResultadoSimulacion { Exito = false, MensajeError = "Evento no encontrado o no tiene participantes suficientes." };
             }
 
-            var personajesParticipantes = CatalogoContext.Personajes
+            var personajesParticipantes = Catalogo.Personajes
                 .Where(p => evento.Participantes.Contains(p.Id))
                 .ToList();
 
-            var cartasParticipantes = CatalogoContext.Cartas
+            var cartasParticipantes = Catalogo.Cartas
                 .Where(c => evento.Participantes.Contains(c.PersonajeId))
                 .ToList();
 

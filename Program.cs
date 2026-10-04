@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MiniProyecto.Services; // Solo importamos tus servicios
+using Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
