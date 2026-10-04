@@ -7,7 +7,6 @@ namespace Services
 {
     public class CatalogoService
     {
-        // GET /personajes/{id}/eventos: devuelve los eventos relacionados con un personaje.
         public List<Evento> ObtenerEventosPorPersonaje(int personajeId)
         {
             return Catalogo.Eventos
@@ -15,7 +14,6 @@ namespace Services
                 .ToList();
         }
 
-        // GET /personajes/ranking?por=poder: ordena personajes según el poder de su carta[cite: 2].
         public List<CardPersonaje> ObtenerRankingPorPoder()
         {
             return Catalogo.Cartas
@@ -23,14 +21,12 @@ namespace Services
                 .ToList();
         }
 
-        // GET /eventos/{id}/mvp: devuelve el participante con mayor poder dentro del evento[cite: 2].
         public Personaje? ObtenerMvpDeEvento(int eventoId)
         {
             var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == eventoId);
-            // Si el evento no existe o no tiene participantes, retornamos nulo
+         
             if (evento == null || !evento.Participantes.Any()) return null;
 
-            // Buscamos las cartas de los participantes y elegimos la de mayor poder
             var cartaMvp = Catalogo.Cartas
                 .Where(c => evento.Participantes.Contains(c.PersonajeId))
                 .OrderByDescending(c => c.Poder)
@@ -41,7 +37,6 @@ namespace Services
             return Catalogo.Personajes.FirstOrDefault(p => p.Id == cartaMvp.PersonajeId);
         }
 
-        // Regla de negocio: Actualización automática de estado a muerto[cite: 2, 3]
         public void RegistrarMuertePersonaje(int personajeId)
         {
             var index = Catalogo.Personajes.FindIndex(p => p.Id == personajeId);
@@ -49,16 +44,14 @@ namespace Services
             {
                 var personajeOriginal = Catalogo.Personajes[index];
                 
-                // Como usamos 'record', creamos una copia inmutable con el campo cambiado y sustituimos en la lista[cite: 2, 3].
                 Catalogo.Personajes[index] = personajeOriginal with { Estado = Estado.Muerto };
             }
         }
-        // POST /eventos/{id}/simular: Simulación de batalla
+
         public ResultadoSimulacion SimularBatalla(int eventoId)
         {
             var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == eventoId);
             
-            // Validación: Error claro si no hay suficientes participantes[cite: 2]
             if (evento == null || evento.Participantes.Count < 2)
             {
                 return new ResultadoSimulacion { Exito = false, MensajeError = "Evento no encontrado o no tiene participantes suficientes." };
@@ -72,13 +65,11 @@ namespace Services
                 .Where(c => evento.Participantes.Contains(c.PersonajeId))
                 .ToList();
 
-            // Validación: Error claro si faltan cartas[cite: 2]
             if (personajesParticipantes.Count != evento.Participantes.Count || cartasParticipantes.Count != evento.Participantes.Count)
             {
                 return new ResultadoSimulacion { Exito = false, MensajeError = "Faltan cartas para algunos de los participantes del evento." };
             }
 
-            // Agrupar poder por bando (Facción)[cite: 2]
             var poderPorFaccion = new Dictionary<string, int>();
             var random = new Random();
 
@@ -93,14 +84,12 @@ namespace Services
                 poderPorFaccion[nombreFaccion] += carta.Poder;
             }
 
-            // Aplicar factor aleatorio acotado (-10 a +10 de poder extra por facción)[cite: 2]
             foreach (var faccion in poderPorFaccion.Keys.ToList())
             {
                 int factorAleatorio = random.Next(-10, 11);
                 poderPorFaccion[faccion] += factorAleatorio;
             }
 
-            // Determinar ganador
             var bandoGanador = poderPorFaccion.OrderByDescending(x => x.Value).First();
 
             return new ResultadoSimulacion 
@@ -113,7 +102,6 @@ namespace Services
         }
     }
 
-    // Clase auxiliar en el mismo archivo para empaquetar la respuesta
     public class ResultadoSimulacion
     {
         public bool Exito { get; set; }
@@ -122,4 +110,4 @@ namespace Services
         public Dictionary<string, int>? PoderCalculado { get; set; }
         public string? Criterio { get; set; }
     }
- }
+}
