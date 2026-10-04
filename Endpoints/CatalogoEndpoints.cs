@@ -207,6 +207,25 @@ namespace Endpoints
             .WithSummary("Ejecuta la simulación de batalla para un evento")
             .Produces<ResultadoSimulacion>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
+            // POST
+            grupoEventos.MapPost("/{id}/registrar-muerte/{personajeId}", (int id, int personajeId) =>
+            {
+                
+                var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == id);
+                if (evento == null) return Results.NotFound("Evento no encontrado.");
+                
+                if (!evento.Participantes.Contains(personajeId))
+                    return Results.BadRequest("El personaje no participó en este evento, no puede morir aquí.");
+
+                service.RegistrarMuertePersonaje(personajeId);
+                
+                return Results.Ok(new { Mensaje = $"El personaje con ID {personajeId} ha sido registrado como muerto en el evento {id}." });
+            })
+            .WithSummary("Registra la muerte de un participante en un evento y actualiza su estado automáticamente")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+            
         }
     }
 }
