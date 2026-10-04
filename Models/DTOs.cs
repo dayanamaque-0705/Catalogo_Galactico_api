@@ -1,8 +1,9 @@
+using System.Collections.Generic;
 
 namespace Models
 {
     // para la creación de personajes, cartas y eventos(sin Id)
-        public record CreatePersonajeDto(
+    public record CreatePersonajeDto(
         string Nombre,
         string Especie,
         Faccion Faccion,
@@ -11,6 +12,7 @@ namespace Models
         bool FuerzaSensitivo
     );
 
+    
     public record CreateCardDto(
         int PersonajeId,
         int Poder,
@@ -21,8 +23,10 @@ namespace Models
     );
     public record CreateEventoDto(
         string Nombre,
+        int Fecha, 
+        string Ubicacion,
         string Descripcion,
-        string Fecha,
-        string Ubicacion
+        List<int> Participantes,
+        string ResultadoGanador
     );
 }
