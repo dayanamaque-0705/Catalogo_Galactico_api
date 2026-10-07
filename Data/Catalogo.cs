@@ -8,9 +8,9 @@ namespace Data
         // Lista Personajes 
         public static List<Personaje> Personajes = new List<Personaje>
         {
-            new Personaje(1, "Luke Skywalker", "Humano", Faccion.Rebelde, "Alianza Rebelde", Estado.Vivo, true),
-            new Personaje(2, "Darth Vader", "Humano/Cyborg", Faccion.Imperio, "Sith", Estado.Vivo, true),
-            new Personaje(3, "Han Solo", "Humano", Faccion.Rebelde, "Contrabandista", Estado.Vivo, false)
+            new Personaje(1, "Luke Skywalker","url", "Humano", Faccion.Rebelde, "Alianza Rebelde", Estado.Vivo, true),
+            new Personaje(2, "Darth Vader","url", "Humano/Cyborg", Faccion.Imperio, "Sith", Estado.Vivo, true),
+            new Personaje(3, "Han Solo","url", "Humano", Faccion.Rebelde, "Contrabandista", Estado.Vivo, false)
         };
 
         // Lista Cartas 

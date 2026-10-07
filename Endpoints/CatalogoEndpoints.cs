@@ -18,7 +18,7 @@ namespace Endpoints
             var grupoCartas = app.MapGroup("/cartas").WithTags("Cartas");
             var grupoEventos = app.MapGroup("/eventos").WithTags("Eventos");
 
-            grupoPersonajes.MapGet("/", ([FromQuery] string? faccion, [FromQuery] bool? fuerzaSensitivo) =>
+            /*grupoPersonajes.MapGet("/", ([FromQuery] string? faccion, [FromQuery] bool? fuerzaSensitivo) =>
             {
                 var query = Catalogo.Personajes.AsQueryable();
                 
@@ -36,7 +36,16 @@ namespace Endpoints
             })
             .WithSummary("Obtiene la lista de personajes con filtros opcionales")
             .Produces<List<Personaje>>(StatusCodes.Status200OK);
-
+            */
+            //lista de personajes 
+            grupoPersonajes.MapGet("/",()=>Results.Ok(Catalogo.Personajes))
+            .WithSummary("Obtiene la lista simple  de personajes")
+            .Produces<List<Personaje>>(StatusCodes.Status200OK);
+             //obtener personajes con card
+             /*grupoPersonajes.MapGet("/{id}/con-card",(int id)=> Results.Ok(service.ObtenerCartasPorPersonaje(id)))
+            .WithSummary("Obtiene las cartas en los que participó un personaje")
+            .Produces<List<CardPersonaje>>(StatusCodes.Status200OK);
+*/
             grupoPersonajes.MapGet("/ranking", () => Results.Ok(service.ObtenerRankingPorPoder()))
             .WithSummary("Obtiene el ranking de personajes ordenados por su poder")
             .Produces<List<CardPersonaje>>(StatusCodes.Status200OK);
@@ -57,7 +66,7 @@ namespace Endpoints
             grupoPersonajes.MapPost("/", (CreatePersonajeDto dto) =>
             {
                 var nuevoId = Catalogo.Personajes.Any() ? Catalogo.Personajes.Max(p => p.Id) + 1 : 1;
-                var nuevoPersonaje = new Personaje(nuevoId, dto.Nombre, dto.Especie, dto.Faccion, dto.Afiliacion, dto.Estado, dto.FuerzaSensitivo);
+                var nuevoPersonaje = new Personaje(nuevoId, dto.Nombre,dto.url, dto.Especie, dto.Faccion, dto.Afiliacion, dto.Estado, dto.FuerzaSensitivo);
                 
                 Catalogo.Personajes.Add(nuevoPersonaje);
                 
@@ -72,7 +81,7 @@ namespace Endpoints
                 var index = Catalogo.Personajes.FindIndex(p => p.Id == id);
                 if (index == -1) return Results.NotFound();
 
-                Catalogo.Personajes[index] = new Personaje(id, dto.Nombre, dto.Especie, dto.Faccion, dto.Afiliacion, dto.Estado, dto.FuerzaSensitivo);
+                Catalogo.Personajes[index] = new Personaje(id, dto.Nombre,dto.url, dto.Especie, dto.Faccion, dto.Afiliacion, dto.Estado, dto.FuerzaSensitivo);
                 
                 return Results.NoContent();
             })

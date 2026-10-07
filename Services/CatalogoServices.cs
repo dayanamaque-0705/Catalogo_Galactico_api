@@ -13,6 +13,12 @@ namespace Services
                 .Where(e => e.Participantes.Contains(personajeId))
                 .ToList();
         }
+       /* public List<CardPersonaje> ObtenerCartasPorPersonaje(int Id)
+        {
+            return Catalogo.Cartas
+            .Where(e => e.Cartas.Contains(Id))
+           .ToList();
+        }*/
 
         public List<CardPersonaje> ObtenerRankingPorPoder()
         {

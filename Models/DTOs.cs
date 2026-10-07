@@ -5,6 +5,7 @@ namespace Models
     // para la creación de personajes, cartas y eventos(sin Id)
     public record CreatePersonajeDto(
         string Nombre,
+       string url,
         string Especie,
         Faccion Faccion,
         string Afiliacion,
