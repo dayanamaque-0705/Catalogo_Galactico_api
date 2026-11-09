@@ -18,6 +18,8 @@ namespace Endpoints
             var grupoCartas = app.MapGroup("/cartas").WithTags("Cartas");
             var grupoEventos = app.MapGroup("/eventos").WithTags("Eventos");
 
+            // ==================== ENDPOINTS DE PERSONAJES ====================
+
             grupoPersonajes.MapGet("/", ([FromQuery] string? faccion, [FromQuery] bool? fuerzaSensitivo) =>
             {
                 var query = Catalogo.Personajes.AsQueryable();
@@ -40,6 +42,15 @@ namespace Endpoints
             grupoPersonajes.MapGet("/ranking", () => Results.Ok(service.ObtenerRankingPorPoder()))
             .WithSummary("Obtiene el ranking de personajes ordenados por su poder")
             .Produces<List<CardPersonaje>>(StatusCodes.Status200OK);
+
+            // --- NUEVO ENDPOINT 1: RANKING POR EXPERIENCIA ---
+            grupoPersonajes.MapGet("/ranking-experiencia", async () =>
+            {
+                var ranking = await service.ObtenerRankingExperienciaAsync();
+                return Results.Ok(ranking);
+            })
+            .WithSummary("Devuelve la lista de personajes ordenados por su experiencia (XP)")
+            .Produces<List<Personaje>>(StatusCodes.Status200OK);
 
             grupoPersonajes.MapGet("/{id}", (int id) =>
             {
@@ -67,6 +78,23 @@ namespace Endpoints
             .Produces<Personaje>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 
+            // --- NUEVO ENDPOINT 2: OTORGAR PUNTOS DE XP Y ASCENDER RANGO ---
+            grupoPersonajes.MapPost("/{id}/xp", async (int id, [FromBody] int puntosXP) =>
+            {
+                var personaje = await service.OtorgarXPAsync(id, puntosXP);
+                if (personaje == null) return Results.NotFound(new { mensaje = "Personaje no encontrado" });
+
+                return Results.Ok(new
+                {
+                    mensaje = $"XP otorgada a {personaje.Nombre}",
+                    xpTotal = personaje.XP,
+                    rangoActual = personaje.Rango
+                });
+            })
+            .WithSummary("Otorga puntos de experiencia a un personaje y actualiza su rango y nivel de peligrosidad")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
             grupoPersonajes.MapPut("/{id}", (int id, CreatePersonajeDto dto) =>
             {
                 var index = Catalogo.Personajes.FindIndex(p => p.Id == id);
@@ -81,6 +109,23 @@ namespace Endpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status400BadRequest);
 
+            // --- NUEVO ENDPOINT 3: RESETEAR EXPERIENCIA / BAJAR RANGO ---
+            grupoPersonajes.MapPut("/{id}/reseteo", async (int id, [FromQuery] string? rango = "Recluta") =>
+            {
+                var personaje = await service.ResetearExperienciaAsync(id, rango);
+                if (personaje == null) return Results.NotFound(new { mensaje = "Personaje no encontrado" });
+
+                return Results.Ok(new
+                {
+                    mensaje = $"Experiencia y rango reseteados para {personaje.Nombre}",
+                    xp = personaje.XP,
+                    rango = personaje.Rango
+                });
+            })
+            .WithSummary("Reinicia la experiencia de un personaje y permite bajar su rango")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
             grupoPersonajes.MapDelete("/{id}", (int id) =>
             {
                 var personajesRemovidos = Catalogo.Personajes.RemoveAll(p => p.Id == id);
@@ -89,6 +134,8 @@ namespace Endpoints
             .WithSummary("Elimina un personaje por su ID")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
+
+            // ==================== ENDPOINTS DE CARTAS ====================
 
             grupoCartas.MapGet("/", () => Results.Ok(Catalogo.Cartas))
             .WithSummary("Obtiene el catálogo completo de cartas")
@@ -102,7 +149,7 @@ namespace Endpoints
             .WithSummary("Busca una carta específica por su ID")
             .Produces<CardPersonaje>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
-            // POST /cartas
+
             grupoCartas.MapPost("/", (CreateCardDto dto) =>
             {
                 var nuevoId = Catalogo.Cartas.Any() ? Catalogo.Cartas.Max(c => c.Id) + 1 : 1;
@@ -130,6 +177,8 @@ namespace Endpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status400BadRequest);
 
+            // ==================== ENDPOINTS DE EVENTOS ====================
+
             grupoEventos.MapGet("/", () => Results.Ok(Catalogo.Eventos))
             .WithSummary("Obtiene el registro de todos los eventos galácticos")
             .Produces<List<Evento>>(StatusCodes.Status200OK);
@@ -142,6 +191,7 @@ namespace Endpoints
             .WithSummary("Busca un evento específico por su ID")
             .Produces<Evento>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+
             grupoEventos.MapPost("/", (CreateEventoDto dto) =>
             {
                 var personajesMuertos = Catalogo.Personajes
@@ -165,7 +215,6 @@ namespace Endpoints
             .Produces<Evento>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 
-            // PUT /eventos/{id}
             grupoEventos.MapPut("/{id}", (int id, CreateEventoDto dto) =>
             {
                 var index = Catalogo.Eventos.FindIndex(e => e.Id == id);
@@ -207,10 +256,9 @@ namespace Endpoints
             .WithSummary("Ejecuta la simulación de batalla para un evento")
             .Produces<ResultadoSimulacion>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
-            // POST
+
             grupoEventos.MapPost("/{id}/registrar-muerte/{personajeId}", (int id, int personajeId) =>
             {
-                
                 var evento = Catalogo.Eventos.FirstOrDefault(e => e.Id == id);
                 if (evento == null) return Results.NotFound("Evento no encontrado.");
                 
@@ -225,7 +273,6 @@ namespace Endpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound);
-            
         }
     }
 }

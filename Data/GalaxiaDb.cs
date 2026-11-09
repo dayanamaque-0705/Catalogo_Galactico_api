@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Models;
 
@@ -15,7 +18,7 @@ public class GalaxiaDb : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Configuración Personaje
+        // === Mapeo de Personaje ===
         modelBuilder.Entity<Personaje>(e =>
         {
             e.HasKey(p => p.Id);
@@ -24,10 +27,16 @@ public class GalaxiaDb : DbContext
             e.Property(p => p.Afiliacion).HasMaxLength(100);
             e.Property(p => p.Faccion).HasConversion<string>();
             e.Property(p => p.Estado).HasConversion<string>();
+
+            // Reglas de Fluent API para el sistema de ascenso
+            e.Property(p => p.Rango).HasMaxLength(50).HasDefaultValue("Recluta");
+            e.Property(p => p.XP).HasDefaultValue(0);
         });
 
+        // Seed Data: Personajes iniciales usando el catálogo estático
+        modelBuilder.Entity<Personaje>().HasData(Catalogo.Personajes);
 
-        // Configuración CardPersonaje
+        // === Mapeo de CardPersonaje ===
         modelBuilder.Entity<CardPersonaje>(e =>
         {
             e.HasKey(c => c.Id);
@@ -36,6 +45,10 @@ public class GalaxiaDb : DbContext
             e.Property(c => c.ImagenUrl).HasMaxLength(255);
         });
 
+        // Seed Data: Cartas iniciales
+        modelBuilder.Entity<CardPersonaje>().HasData(Catalogo.Cartas);
+
+        // === Mapeo de Evento ===
         modelBuilder.Entity<Evento>(e =>
         {
             e.HasKey(ev => ev.Id);
@@ -43,6 +56,7 @@ public class GalaxiaDb : DbContext
             e.Property(ev => ev.Ubicacion).HasMaxLength(100);
             e.Property(ev => ev.ResultadoGanador).HasMaxLength(80);
 
+            // Convierte List<int> a string (ej. "1,2,3") para guardarlo en una sola columna en MySQL
             e.Property(ev => ev.Participantes)
              .HasConversion(
                  v => string.Join(',', v),
@@ -50,5 +64,7 @@ public class GalaxiaDb : DbContext
              );
         });
 
+        // Seed Data: Eventos iniciales
+        modelBuilder.Entity<Evento>().HasData(Catalogo.Eventos);
     }
 }

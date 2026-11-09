@@ -56,6 +56,38 @@ namespace Catalogo_Galactico_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Cartas");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Arma = "Sable de luz verde",
+                            HabilidadEspecial = "Reflejos Jedi",
+                            ImagenUrl = "url_luke.jpg",
+                            NivelPeligrosidad = 8,
+                            PersonajeId = 1,
+                            Poder = 85
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Arma = "Sable de luz rojo",
+                            HabilidadEspecial = "Estrangulamiento con la Fuerza",
+                            ImagenUrl = "url_vader.jpg",
+                            NivelPeligrosidad = 10,
+                            PersonajeId = 2,
+                            Poder = 95
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Arma = "Blaster pesado",
+                            HabilidadEspecial = "Disparo rápido",
+                            ImagenUrl = "url_han.jpg",
+                            NivelPeligrosidad = 6,
+                            PersonajeId = 3,
+                            Poder = 60
+                        });
                 });
 
             modelBuilder.Entity("Models.Evento", b =>
@@ -95,6 +127,38 @@ namespace Catalogo_Galactico_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Eventos");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Descripcion = "Destrucción de la primera Estrella de la Muerte",
+                            Fecha = 0,
+                            Nombre = "Batalla de Yavin",
+                            Participantes = "1,2,3",
+                            ResultadoGanador = "Rebeldes",
+                            Ubicacion = "Yavin 4"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Descripcion = "Incursión temprana del Imperio",
+                            Fecha = -5,
+                            Nombre = "Misión en Lothal",
+                            Participantes = "2",
+                            ResultadoGanador = "Imperio",
+                            Ubicacion = "Lothal"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Descripcion = "Caída del Imperio",
+                            Fecha = 4,
+                            Nombre = "Batalla de Endor",
+                            Participantes = "1,2,3",
+                            ResultadoGanador = "Rebeldes",
+                            Ubicacion = "Luna de Endor"
+                        });
                 });
 
             modelBuilder.Entity("Models.Personaje", b =>
@@ -131,9 +195,59 @@ namespace Catalogo_Galactico_api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("Rango")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Recluta");
+
+                    b.Property<int>("XP")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.ToTable("Personajes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Afiliacion = "Alianza Rebelde",
+                            Especie = "Humano",
+                            Estado = "Vivo",
+                            Faccion = "Rebelde",
+                            FuerzaSensitivo = true,
+                            Nombre = "Luke Skywalker",
+                            Rango = "Recluta",
+                            XP = 0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Afiliacion = "Sith",
+                            Especie = "Humano/Cyborg",
+                            Estado = "Vivo",
+                            Faccion = "Imperio",
+                            FuerzaSensitivo = true,
+                            Nombre = "Darth Vader",
+                            Rango = "Recluta",
+                            XP = 0
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Afiliacion = "Contrabandista",
+                            Especie = "Humano",
+                            Estado = "Vivo",
+                            Faccion = "Rebelde",
+                            FuerzaSensitivo = false,
+                            Nombre = "Han Solo",
+                            Rango = "Recluta",
+                            XP = 0
+                        });
                 });
 #pragma warning restore 612, 618
         }
