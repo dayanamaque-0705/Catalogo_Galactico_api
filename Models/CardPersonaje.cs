@@ -8,4 +8,7 @@ public record CardPersonaje(
     string Arma,
     int NivelPeligrosidad,
     string ImagenUrl
-);
+)
+{
+    public Personaje Personaje { get; set; } = null!;
+}

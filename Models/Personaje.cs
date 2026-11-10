@@ -13,4 +13,6 @@ public record Personaje(
     // Propiedades adicionales para el juego
     public int XP { get; init; } = 0;
     public string Rango { get; init; } = "Recluta";// Nivel de rango inicial
+    public string? IdentidadSecretaCifrada { get; init; }
+    public ICollection<CardPersonaje> Cartas { get; } = new List<CardPersonaje>();
 }

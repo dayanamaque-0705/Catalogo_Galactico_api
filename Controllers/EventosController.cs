@@ -1,4 +1,3 @@
-using Data;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using Services;
@@ -8,130 +7,104 @@ namespace Controllers;
 [ApiController]
 [Route("eventos")]
 [Produces("application/json")]
-public sealed class EventosController(CatalogoService service) : ControllerBase
+public sealed class EventosController(ICatalogoService catalogo) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<Evento>), StatusCodes.Status200OK)]
-    public ActionResult<List<Evento>> ObtenerTodos() =>
-        Ok(Catalogo.Eventos);
+    [ProducesResponseType(typeof(IReadOnlyList<EventoResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<EventoResponse>>> ObtenerTodos(CancellationToken ct) =>
+        Ok(await catalogo.ObtenerEventosAsync(ct));
 
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(Evento), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EventoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Evento> ObtenerPorId(int id)
+    public async Task<ActionResult<EventoResponse>> ObtenerPorId(int id, CancellationToken ct)
     {
-        var evento = Catalogo.Eventos.FirstOrDefault(evento => evento.Id == id);
+        var evento = await catalogo.ObtenerEventoAsync(id, ct);
         return evento is null
-            ? NotFound(new { mensaje = "Evento no encontrado" })
+            ? NotFound(new ProblemDetails { Status = StatusCodes.Status404NotFound, Title = "Evento no encontrado." })
             : Ok(evento);
     }
 
-    [HttpPost]
-    [ProducesResponseType(typeof(Evento), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<Evento> Crear(CreateEventoDto dto)
+    [HttpGet("{id:int}/mvp")]
+    [ProducesResponseType(typeof(PersonajeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonajeResponse>> ObtenerMvp(int id, CancellationToken ct)
     {
-        var errorParticipantes = ValidarParticipantesVivos(dto.Participantes);
-        if (errorParticipantes is not null)
-        {
-            return BadRequest(new { mensaje = errorParticipantes });
-        }
+        var mvp = await catalogo.ObtenerMvpAsync(id, ct);
+        return mvp is null
+            ? NotFound(new ProblemDetails { Status = StatusCodes.Status404NotFound, Title = "No se encontró MVP para el evento." })
+            : Ok(mvp);
+    }
 
-        var nuevoId = Catalogo.Eventos.Count > 0
-            ? Catalogo.Eventos.Max(evento => evento.Id) + 1
-            : 1;
-        var evento = new Evento(
-            nuevoId, dto.Nombre, dto.Fecha, dto.Ubicacion,
-            dto.Descripcion, dto.Participantes, dto.ResultadoGanador);
-        Catalogo.Eventos.Add(evento);
-        return CreatedAtAction(nameof(ObtenerPorId), new { id = nuevoId }, evento);
+    [HttpPost]
+    [ProducesResponseType(typeof(EventoResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<EventoResponse>> Crear(CreateEventoDto dto, CancellationToken ct)
+    {
+        var result = await catalogo.CrearEventoAsync(dto, ct);
+        if (result.Error is not null)
+            return BadRequest(new ProblemDetails { Status = StatusCodes.Status400BadRequest, Title = result.Error });
+
+        return CreatedAtAction(nameof(ObtenerPorId), new { id = result.Evento!.Id }, result.Evento);
     }
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Actualizar(int id, CreateEventoDto dto)
+    public async Task<IActionResult> Actualizar(int id, CreateEventoDto dto, CancellationToken ct)
     {
-        var index = Catalogo.Eventos.FindIndex(evento => evento.Id == id);
-        if (index < 0)
-        {
-            return NotFound(new { mensaje = "Evento no encontrado" });
-        }
-
-        var errorParticipantes = ValidarParticipantesVivos(dto.Participantes);
-        if (errorParticipantes is not null)
-        {
-            return BadRequest(new { mensaje = errorParticipantes });
-        }
-
-        Catalogo.Eventos[index] = new Evento(
-            id, dto.Nombre, dto.Fecha, dto.Ubicacion,
-            dto.Descripcion, dto.Participantes, dto.ResultadoGanador);
+        var result = await catalogo.ActualizarEventoAsync(id, dto, ct);
+        if (result.NoEncontrado)
+            return NotFound(new ProblemDetails { Status = StatusCodes.Status404NotFound, Title = "Evento no encontrado." });
+        if (result.Error is not null)
+            return BadRequest(new ProblemDetails { Status = StatusCodes.Status400BadRequest, Title = result.Error });
         return NoContent();
     }
 
-    [HttpGet("{id:int}/mvp")]
-    [ProducesResponseType(typeof(Personaje), StatusCodes.Status200OK)]
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Personaje> ObtenerMvp(int id)
-    {
-        if (!Catalogo.Eventos.Any(evento => evento.Id == id))
-        {
-            return NotFound(new { mensaje = "Evento no encontrado" });
-        }
-
-        var mvp = service.ObtenerMvpDeEvento(id);
-        return mvp is null
-            ? NotFound(new { mensaje = "No se encontró MVP para este evento." })
-            : Ok(mvp);
-    }
+    public async Task<IActionResult> Eliminar(int id, CancellationToken ct) =>
+        await catalogo.EliminarEventoAsync(id, ct)
+            ? NoContent()
+            : NotFound(new ProblemDetails { Status = StatusCodes.Status404NotFound, Title = "Evento no encontrado." });
 
     [HttpPost("{id:int}/simular")]
     [ProducesResponseType(typeof(ResultadoSimulacion), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<ResultadoSimulacion> Simular(int id)
+    public async Task<ActionResult<ResultadoSimulacion>> Simular(int id, CancellationToken ct)
     {
-        var resultado = service.SimularBatalla(id);
-        return resultado.Exito
-            ? Ok(resultado)
-            : BadRequest(new { mensaje = resultado.MensajeError });
+        var resultado = await catalogo.SimularBatallaAsync(id, ct);
+        return resultado is null
+            ? BadRequest(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "El evento no existe o no tiene participantes suficientes con cartas."
+            })
+            : Ok(resultado);
     }
 
     [HttpPost("{id:int}/registrar-muerte/{personajeId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult RegistrarMuerte(int id, int personajeId)
+    public async Task<IActionResult> RegistrarMuerte(int id, int personajeId, CancellationToken ct)
     {
-        var evento = Catalogo.Eventos.FirstOrDefault(evento => evento.Id == id);
-        if (evento is null)
+        var result = await catalogo.RegistrarMuerteAsync(id, personajeId, ct);
+        return result switch
         {
-            return NotFound(new { mensaje = "Evento no encontrado." });
-        }
-
-        if (!evento.Participantes.Contains(personajeId))
-        {
-            return BadRequest(new { mensaje = "El personaje no participó en este evento, no puede morir aquí." });
-        }
-
-        service.RegistrarMuertePersonaje(personajeId);
-        return Ok(new
-        {
-            mensaje = $"El personaje con ID {personajeId} ha sido registrado como muerto en el evento {id}."
-        });
-    }
-
-    private static string? ValidarParticipantesVivos(IEnumerable<int> participantes)
-    {
-        var personajesMuertos = Catalogo.Personajes
-            .Where(personaje =>
-                participantes.Contains(personaje.Id) && personaje.Estado == Estado.Muerto)
-            .Select(personaje => personaje.Nombre)
-            .ToList();
-
-        return personajesMuertos.Count == 0
-            ? null
-            : $"Los siguientes personajes están muertos y no pueden participar: {string.Join(", ", personajesMuertos)}";
+            null => NotFound(new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Evento no encontrado."
+            }),
+            false => BadRequest(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "El personaje no participó en este evento o no existe."
+            }),
+            _ => Ok(new { mensaje = $"El personaje {personajeId} fue marcado como muerto." })
+        };
     }
 }
