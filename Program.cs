@@ -1,5 +1,4 @@
 using Data;
-using Endpoints;
 using Microsoft.EntityFrameworkCore;
 using Services;
 
@@ -27,8 +26,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthorization();
-
-app.MapCatalogoEndpoints(app.Services.CreateScope().ServiceProvider.GetRequiredService<CatalogoService>());
 
 app.MapControllers();
 

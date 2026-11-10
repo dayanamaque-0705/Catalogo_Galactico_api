@@ -118,20 +118,21 @@ namespace Services
         /// <summary>
         /// Devuelve los personajes ordenados por su XP acumulada.
         /// </summary>
-        public async Task<List<Personaje>> ObtenerRankingExperienciaAsync()
+        public async Task<List<Personaje>> ObtenerRankingExperienciaAsync(CancellationToken cancellationToken = default)
         {
             if (_db != null)
             {
-                return await _db.Personajes.OrderByDescending(p => p.XP).ToListAsync();
+                return await _db.Personajes.OrderByDescending(p => p.XP).ToListAsync(cancellationToken);
             }
 
             return await Task.FromResult(Catalogo.Personajes.OrderByDescending(p => p.XP).ToList());
         }
-        public async Task<Personaje?> OtorgarXPAsync(int id, int puntosXP)
+        public async Task<Personaje?> OtorgarXPAsync(
+            int id, int puntosXP, CancellationToken cancellationToken = default)
         {
             if (_db != null)
             {
-                var personajeDb = await _db.Personajes.FindAsync(id);
+                var personajeDb = await _db.Personajes.FindAsync([id], cancellationToken);
                 if (personajeDb == null) return null;
 
                 int xpTotalDb = personajeDb.XP + puntosXP;
@@ -147,7 +148,8 @@ namespace Services
 
                 if (rangoDb != personajeDb.Rango)
                 {
-                    var cartaDb = await _db.Cartas.FirstOrDefaultAsync(c => c.PersonajeId == id);
+                    var cartaDb = await _db.Cartas.FirstOrDefaultAsync(
+                        c => c.PersonajeId == id, cancellationToken);
                     if (cartaDb != null)
                     {
                         var nuevaCartaDb = cartaDb with { NivelPeligrosidad = Math.Min(10, cartaDb.NivelPeligrosidad + 2) };
@@ -155,7 +157,7 @@ namespace Services
                     }
                 }
 
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(cancellationToken);
                 return nuevoPersonajeDb;
             }
 
@@ -192,19 +194,20 @@ namespace Services
         /// <summary>
         /// Reinicia la experiencia de un personaje a 0 y asigna el rango solicitado (por defecto Recluta).
         /// </summary>
-        public async Task<Personaje?> ResetearExperienciaAsync(int id, string? nuevoRango = "Recluta")
+        public async Task<Personaje?> ResetearExperienciaAsync(
+            int id, string? nuevoRango = "Recluta", CancellationToken cancellationToken = default)
         {
             string rangoFinal = string.IsNullOrWhiteSpace(nuevoRango) ? "Recluta" : nuevoRango;
 
             if (_db != null)
             {
-                var personajeDb = await _db.Personajes.FindAsync(id);
+                var personajeDb = await _db.Personajes.FindAsync([id], cancellationToken);
                 if (personajeDb == null) return null;
 
                 var personajeReseteadoDb = personajeDb with { XP = 0, Rango = rangoFinal };
                 _db.Entry(personajeDb).CurrentValues.SetValues(personajeReseteadoDb);
 
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(cancellationToken);
                 return personajeReseteadoDb;
             }
 
