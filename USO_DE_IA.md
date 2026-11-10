@@ -22,6 +22,5 @@ Se utilizó la asistencia de IA para la organización, redacción y estructuraci
 
 Se utilizó la asistencia de IA para implementar el filtro `AdminApiKeyFilter` y proteger `PUT /personajes/{id}/reseteo`. Esta operación puede reiniciar la experiencia o cambiar el rango de un personaje, por lo que no debía quedar disponible para cualquier consumidor de la API sin autorización.
 
-El filtro comprueba la clave enviada en el encabezado `X-Admin-Key` contra `Seguridad:ClaveAdministrador`, configurada fuera del código mediante Secret Manager. Si falta o no coincide, detiene la solicitud y devuelve `401 Unauthorized`; si es válida, permite que el controlador procese el reseteo. La comparación se realiza en tiempo constante y se registra el intento no autorizado.
 
 Se aceptó esta solución porque centraliza la comprobación de autorización en un filtro y evita repetirla dentro de la lógica del controlador. La clave no se incluye en el repositorio ni se devuelve en las respuestas de la API.
